@@ -1,4 +1,4 @@
--- This won't work perfectly in a non-solo if you don't disable 'View Opponent's Info Bar'.
+-- lol
 
 local tweenservice = game:GetService("TweenService")
 local gameUi = game.Players.LocalPlayer.PlayerGui:FindFirstChild("GameUI")
@@ -28,10 +28,14 @@ secondary.Position = UDim2.new(0.5,0,0,40)
 secondary.TextSize = 30
 
 local prevcombo = 0
+local event = game.ReplicatedStorage.RE;
+local inNoMiss = false;
 
-function updateCombo(combo,acc,miss)
+local function updateCombo(combo,acc,miss)
     if acc == "100.00%" then
         secondary.Text = "PFC"
+    elseif inNoMiss then
+        secondary.Text = "NO-MISS"
     elseif miss == 0 then
         secondary.Text = "FC"
     else
@@ -107,24 +111,57 @@ function updateCombo(combo,acc,miss)
     end
 end
 
+local function SendPlay()
+    inNoMiss = true;
+    event:FireServer({"Server","StageManager","PlaySolo"},{});
+end
+
 gameUi.Arrows.InfoBar:GetPropertyChangedSignal("Text"):Connect(
     function()
         local t = gameUi.Arrows.InfoBar.Text
         local tt = string.split(t, " ")
+
         if tt[10] then
             local num = string.gsub(tt[10], "%D", "")
             updateCombo(tonumber(num),tt[2],tonumber(tt[5]))
-        else
+        elseif tt[8] then
             local num = string.gsub(tt[8], "%D", "")
             updateCombo(tonumber(num),tt[2],tonumber(tt[5]))
+        end
+        
+        if inNoMiss then
+            if tonumber(tt[5]) and tonumber(tt[5]) >= 1 then
+                game.Players.LocalPlayer.Character.Humanoid.Health = -100;
+                inNoMiss = false;
+            end
+            if tt[10] then
+                gameUi.Arrows.InfoBar.Text = tt[1].." "..tt[2].." | NO-MISS MODE "..(tt[10])
+            end
         end
     end
 )
 
-gameUi.Arrows.InfoBar:GetPropertyChangedSignal("Visible"):Connect(
+gameUi.Arrows:GetPropertyChangedSignal("Visible"):Connect(
     function()
-        if gameUi.Arrows.InfoBar.Visible == false then
+        if gameUi.Arrows.Visible == false then
             funny.Visible = false
+            inNoMiss = false;
         end
     end
+)
+
+local c = gameUi.SongSelector.Frame.Body.Settings.Solo:Clone();
+c.Parent = gameUi.SongSelector.Frame.Body.Settings
+c.Name = "NoMiss"
+c.SoloPlay.Text = "No-Miss";
+c.SoloPlay.BackgroundColor3 = Color3.new(0.4,1,0.4);
+c.SoloInfoLabel.Text = c.SoloInfoLabel.Text.." 1 MISS = DEATH!";
+c.SoloPlay.MouseButton1Click:Connect(function()
+    if not c.Visible and not gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.R >= gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.G then
+        SendPlay()
+    end
+end)
+c.Position = UDim2.new(0,500,0,0)
+gameUi.SongSelector.Frame.Body.Settings.Solo:GetPropertyChangedSignal("Visible"):Connect(function() -- Don't let the people press the no-miss if it's not solo
+    c.Visible = gameUi.SongSelector.Frame.Body.Settings.Solo.Visible;
 )
