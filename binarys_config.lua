@@ -2,6 +2,7 @@
 
 local tweenservice = game:GetService("TweenService")
 local gameUi = game.Players.LocalPlayer.PlayerGui:FindFirstChild("GameUI")
+local origintime = 0;
 
 local funny = Instance.new("TextLabel")
 funny.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -217,16 +218,51 @@ gameUi.Arrows:GetPropertyChangedSignal("Visible"):Connect(
         if gameUi.Arrows.Visible == false then
             funny.Visible = false
             inNoMiss = false;
+            origintime = 0;
         end
     end
 )
+
+local topb = gameUi.TopbarLabel:Clone();
+topb.Parent = gameUi;
+topb.Visible = true;
+
+gameUi.TopbarLabel:GetPropertyChangedSignal("Text"):Connect(function()
+    local newtxt = gameUi.TopbarLabel.Text;
+    topb.Text = newtxt
+    local txttable = string.split(newtxt,"\n")
+    if txttable[3] then
+        local tim = string.split(txttable[3],":");
+        local seconds = tonumber(tim[1])*60 + tonumber(tim[2])
+        if origintime == 0 then
+            origintime = seconds
+        end
+        
+        local function handler()
+            local m = math.floor((seconds/origintime)*75)
+            local s = ""
+            for i=1,math.abs(m-75) do 
+                s = s..string.split(txttable[1],">")[1]..'>|</font>'
+            end
+            for i=1,m do 
+                s = s..'|'
+            end
+            return s
+        end
+        
+        topb.Text = newtxt.."\n["..handler().."]"
+    end
+end)
+gameUi.TopbarLabel:GetPropertyChangedSignal("Visible"):Connect(function()
+     gameUi.TopbarLabel.Visible = false;   
+end)
 
 local c = gameUi.SongSelector.Frame.Body.Settings.Solo:Clone();
 c.Parent = gameUi.SongSelector.Frame.Body.Settings
 c.Name = "NoMiss"
 c.SoloPlay.Text = "No-Miss";
 c.SoloPlay.BackgroundColor3 = Color3.new(0.4,1,0.4);
-c.SoloInfoLabel.Text = c.SoloInfoLabel.Text.." 1 MISS = DEATH!";
+c.SoloInfoLabel.Text = "Solo: 1 MISS = DEATH!";
 c.SoloPlay.MouseButton1Click:Connect(function()
     if c.Visible and gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.R >= gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.G then
         SendPlay()
