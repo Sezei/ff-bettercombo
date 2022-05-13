@@ -1,4 +1,4 @@
--- lol
+-- idek
 
 local tweenservice = game:GetService("TweenService")
 local gameUi = game.Players.LocalPlayer.PlayerGui:FindFirstChild("GameUI")
@@ -31,16 +31,87 @@ local prevcombo = 0
 local event = game.ReplicatedStorage.RE;
 local inNoMiss = false;
 
+local function CalcRating(one,two)
+    if one == 100 then
+        return "P"
+    elseif one == 99 then
+        if two > 95 then
+            return "S+"
+        elseif two > 90 then
+            return "S"
+        elseif two > 85 then
+            return "AAA"
+        elseif two > 70 then
+            return "AA+"
+        elseif two > 60 then
+            return "AA:"
+        elseif two > 50 then
+            return "AA."
+        elseif two > 40 then
+            return "AA"
+        elseif two > 30 then
+            return "A+"
+        elseif two > 20 then
+            return "A:"
+        elseif two > 10 then
+            return "A."
+        end
+        return "A"
+    elseif one >= 95 then
+        return "B"
+    elseif one >= 90 then
+        return "C"
+    elseif one >= 80 then
+        return "D"
+    else
+        return "F"
+    end
+end
+
 local function updateCombo(combo,acc,miss)
-    if acc == "100.00%" then
+    local result1 = string.split(game.Players.LocalPlayer.PlayerGui.GameUI.Arrows.Stats.Text,"\n")
+    local res = {};
+    for k,f in pairs(result1) do
+        res[k] = tonumber(string.split(f," ")[2]);
+    end
+    
+    if res[2] == 0 and res[3] == 0 and res[4] == 0 and miss== 0 then
         secondary.Text = "PFC"
-    elseif inNoMiss then
+    elseif res[2] == 1 and res[3] == 0 and res[4] == 0 and miss== 0 then -- good
+        secondary.Text = "G-FLAG"
+    elseif res[2] == 0 and res[3] == 1 and res[4] == 0 and miss == 0 then -- OK
+        secondary.Text = "O-FLAG"
+    elseif res[2] == 0 and res[3] == 0 and res[4] == 1 and miss == 0 then -- bad
+        secondary.Text = "B-FLAG"
+    elseif res[2] == 0 and res[3] == 0 and res[4] == 0 and miss == 1 then -- one miss but no goods, bads nor oks
+        secondary.Text = "M-FLAG"
+    elseif res[3] == 0 and res[4] == 0 and miss == 0 then
+        secondary.Text = "GFC"
+    elseif res[2] < 10 and miss == 0 then
+        secondary.Text = "SDG ("..res[2]..")"
+    elseif inNoMiss and miss == 0 then
         secondary.Text = "NO-MISS"
     elseif miss == 0 then
         secondary.Text = "FC"
+    elseif combo > 19 then
+        if miss == 1 then
+            secondary.Text = "MIN1"
+        elseif miss <= 9 then
+            secondary.Text = "SDCB (-"..miss..")"
+        else
+            secondary.Text = "(-"..miss..")"
+        end
     else
         secondary.Text = ""
     end
+    
+    local accur = string.split(acc,".")
+    local num = string.gsub(accur[2], "%D", "")
+    
+    if secondary.Text ~= "" then
+        secondary.Text ..= " | "..CalcRating(tonumber(accur[1]),tonumber(num))
+    end
+    
     
     if prevcombo >= 20 and combo < 20 then
         -- Combo Break
@@ -157,11 +228,14 @@ c.SoloPlay.Text = "No-Miss";
 c.SoloPlay.BackgroundColor3 = Color3.new(0.4,1,0.4);
 c.SoloInfoLabel.Text = c.SoloInfoLabel.Text.." 1 MISS = DEATH!";
 c.SoloPlay.MouseButton1Click:Connect(function()
-    if not c.Visible and not gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.R >= gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.G then
+    if c.Visible and gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.R >= gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.G then
         SendPlay()
     end
 end)
 c.Position = UDim2.new(0,500,0,0)
 gameUi.SongSelector.Frame.Body.Settings.Solo:GetPropertyChangedSignal("Visible"):Connect(function() -- Don't let the people press the no-miss if it's not solo
     c.Visible = gameUi.SongSelector.Frame.Body.Settings.Solo.Visible;
-)
+end)
+gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay:GetPropertyChangedSignal("BackgroundColor3"):Connect(function() -- Don't let the people press the no-miss if it's not solo
+    c.Visible = gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.R >= gameUi.SongSelector.Frame.Body.Settings.Solo.SoloPlay.BackgroundColor3.G;
+end)
