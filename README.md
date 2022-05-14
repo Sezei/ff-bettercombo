@@ -1,3 +1,7 @@
+# DEPRECATED
+The repository is deprecated in favor of [Kate Engine](https://github.com/Sezei/ff-kate-engine);
+It will be updated much more frequently, and if anything will happen it will be fixed there, NOT here.
+
 # ff-bettercombo
 this funny thing literally just makes you have an on-screen combo counter that's easier to read than the downstairs-stats thing. requires 'Info Bar' to be true in settings while 'Opponent's info bar' being false.
 
